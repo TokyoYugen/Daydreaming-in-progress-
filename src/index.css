@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-bg-deep: #0b0f19;
+    --color-bg-card: #131b2e;
+    --color-border-subtle: #232f48;
+    --color-accent-gold: #e5b96f;
+    --color-accent-cyan: #6ee7b7;
+    --color-accent-indigo: #818cf8;
+    --color-text-main: #f1f5f9;
+    --color-text-muted: #94a3b8;
+  }
+
+  body {
+    background-color: #080c16;
+    color: #f1f5f9;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    selection-background-color: rgba(229, 185, 111, 0.3);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
+::-webkit-scrollbar-thumb {
+  background: #232f48;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b4d75;
+}
+
+/* Oneiric pulse animation */
+@keyframes dream-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(129, 140, 248, 0.2), 0 0 40px rgba(229, 185, 111, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(129, 140, 248, 0.4), 0 0 60px rgba(229, 185, 111, 0.25);
+  }
+}
+
+.dream-glow-active {
+  animation: dream-glow 4s ease-in-out infinite;
+}
+
+@keyframes float-subtle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-float {
+  animation: float-subtle 5s ease-in-out infinite;
+}

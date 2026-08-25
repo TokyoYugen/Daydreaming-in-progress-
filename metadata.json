@@ -1,0 +1,10 @@
+{
+  "name": "Dream Journal",
+  "description": "Multi-modal dream journal with waking voice recording, AI transcription, surrealist dream art generation, Jungian archetype analysis, and symbol chat.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
