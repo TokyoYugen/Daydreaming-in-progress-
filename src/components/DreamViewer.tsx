@@ -25,6 +25,7 @@ import { exportDreamAsMarkdown } from '../utils/storage';
 import { fetchJson } from '../utils/apiClient';
 import { useLanguage } from '../context/LanguageContext';
 import { getSafeDreamArtwork, generateDreamSvgArtwork } from '../utils/dreamArtwork';
+import { localizeArchetypeName, localizeSymbolName, localizeEmotionName } from '../utils/translations';
 
 interface DreamViewerProps {
   dream: DreamEntry;
@@ -331,7 +332,7 @@ export const DreamViewer: React.FC<DreamViewerProps> = ({
                       {t.atmosphere}: {inter?.surrealismAtmosphere || (language === 'it' ? 'Trascendenza Onirica' : 'Oneiric Transcendence')}
                     </span>
                     <span className="px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs font-mono">
-                      {t.dominantEmotion}: {inter?.dominantEmotion || (language === 'it' ? 'Riflessivo' : 'Reflective')} (
+                      {t.dominantEmotion}: {localizeEmotionName(inter?.dominantEmotion || '', language) || (language === 'it' ? 'Riflessivo' : 'Reflective')} (
                       {inter?.emotionIntensity || 7}/10)
                     </span>
                   </div>
@@ -385,7 +386,7 @@ export const DreamViewer: React.FC<DreamViewerProps> = ({
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-amber-200 font-serif tracking-wide bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-500/30">
-                          {arch.archetype}
+                          {localizeArchetypeName(arch.archetype, language)}
                         </span>
                         <span className="text-[11px] text-slate-400 italic">
                           {t.manifestation}: {arch.presence}
@@ -428,7 +429,7 @@ export const DreamViewer: React.FC<DreamViewerProps> = ({
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
                           <h4 className="text-xs font-bold text-slate-100 group-hover:text-amber-200 transition-colors">
-                            {sym.name}
+                            {localizeSymbolName(sym.name, language)}
                           </h4>
                           <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
                             {sym.category}

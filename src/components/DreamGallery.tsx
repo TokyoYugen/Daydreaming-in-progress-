@@ -3,6 +3,7 @@ import { Search, Sparkles, Filter, Mic, Plus, Eye, Heart } from 'lucide-react';
 import { DreamEntry } from '../types';
 import { DreamCard } from './DreamCard';
 import { useLanguage } from '../context/LanguageContext';
+import { localizeArchetypeName } from '../utils/translations';
 
 interface DreamGalleryProps {
   dreams: DreamEntry[];
@@ -21,15 +22,15 @@ export const DreamGallery: React.FC<DreamGalleryProps> = ({
   onOpenVoiceRecorder,
   onOpenManualEntry,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'lucidity'>('newest');
 
   // Collect all unique tags and archetypes
-  const allTags = Array.from(
-    new Set(
+  const allTags: string[] = Array.from(
+    new Set<string>(
       dreams.flatMap((d) => [
         ...(d.tags || []),
         ...(d.interpretation?.archetypes || []).map((a) => a.archetype),
@@ -87,47 +88,47 @@ export const DreamGallery: React.FC<DreamGalleryProps> = ({
     });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-8 animate-fadeIn">
-      {/* Hero Welcome Banner */}
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-indigo-950/70 via-[#10172a] to-purple-950/60 border border-slate-800 p-6 sm:p-10 shadow-2xl">
-        <div className="relative z-10 max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 font-mono tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 sm:py-8 space-y-6 animate-fadeIn">
+      {/* Hero Welcome Banner (Compact & Conforming to Layout) */}
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-indigo-950/50 via-[#0e1424] to-purple-950/40 border border-slate-800/90 p-4 sm:p-6 shadow-xl">
+        <div className="relative z-10 max-w-2xl space-y-2.5">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] sm:text-xs text-indigo-300 font-mono tracking-wider uppercase whitespace-nowrap">
+            <Sparkles className="w-3 h-3 text-amber-300 shrink-0" />
             <span>{t.heroKicker}</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-serif font-bold text-slate-100 leading-tight">
+          <h1 className="text-lg sm:text-2xl font-serif font-bold text-slate-100 leading-snug">
             {t.heroTitle}
           </h1>
 
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-300/90 leading-relaxed max-w-xl">
             {t.heroDescription}
           </p>
 
-          <div className="pt-2 flex flex-wrap items-center gap-3">
+          <div className="pt-1.5 flex flex-wrap items-center gap-2.5">
             <button
               id="hero-record-voice-btn"
               onClick={onOpenVoiceRecorder}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 border border-indigo-400/30 transition-all hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs sm:text-sm font-semibold shadow-md border border-indigo-400/30 transition-all active:scale-95 whitespace-nowrap"
             >
-              <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-              <Mic className="w-4 h-4 text-amber-200" />
+              <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse shrink-0" />
+              <Mic className="w-3.5 h-3.5 text-amber-200 shrink-0" />
               <span>{t.recordWakingVoice}</span>
             </button>
 
             <button
               id="hero-write-dream-btn"
               onClick={onOpenManualEntry}
-              className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-slate-200 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
             >
-              <Plus className="w-4 h-4 text-slate-400" />
+              <Plus className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span>{t.writeDream}</span>
             </button>
           </div>
         </div>
 
         {/* Decorative background orb */}
-        <div className="absolute top-1/2 right-10 -translate-y-1/2 w-72 h-72 rounded-full bg-gradient-to-br from-indigo-600/20 via-purple-600/15 to-amber-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 right-6 -translate-y-1/2 w-48 h-48 rounded-full bg-gradient-to-br from-indigo-600/15 via-purple-600/10 to-amber-500/5 blur-2xl pointer-events-none" />
       </div>
 
       {/* Filter & Search Bar */}
@@ -180,25 +181,28 @@ export const DreamGallery: React.FC<DreamGalleryProps> = ({
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
           <button
             onClick={() => setSelectedTag('all')}
-            className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+            className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
               selectedTag === 'all'
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-indigo-600 text-white shadow-sm'
                 : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
             }`}
           >
-            {t.allDreams} ({dreams.length})
+            <span className="whitespace-nowrap">{t.allDreams}</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-indigo-500/20 text-[10px] font-mono leading-none border border-indigo-500/30">
+              {dreams.length}
+            </span>
           </button>
           {allTags.slice(0, 12).map((tag) => (
             <button
               key={tag}
               onClick={() => setSelectedTag(tag === selectedTag ? 'all' : tag)}
-              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
                 selectedTag === tag
-                  ? 'bg-amber-500/20 border border-amber-500/40 text-amber-200'
+                  ? 'bg-amber-500/20 border border-amber-500/40 text-amber-200 shadow-sm'
                   : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
               }`}
             >
-              #{tag}
+              #{localizeArchetypeName(tag, language)}
             </button>
           ))}
         </div>

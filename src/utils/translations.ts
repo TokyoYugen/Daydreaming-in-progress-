@@ -332,3 +332,150 @@ export const translations = {
     footerSub: 'Alimentato da Gemini 3.7 Flash & Imagen 3 | Creato per la cattura immediata al risveglio e l\'integrazione psicologica',
   },
 };
+
+// Bidirectional mappings for Jungian archetypes, symbols, and emotions
+export function localizeArchetypeName(name: string, lang: Language): string {
+  if (!name) return name;
+  const itToEn: Record<string, string> = {
+    'Il Sé': 'The Self',
+    "L'Ombra": 'The Shadow',
+    "L'Anima / L'Animus": 'The Anima/Animus',
+    "L'Anima": 'The Anima',
+    "L'Animus": 'The Animus',
+    'La Persona': 'The Persona',
+    'La Guida Saggia / Psicopompo': 'The Wise Guide / Psychopomp',
+    'La Guida Saggia': 'The Wise Guide',
+    'Il Vecchio Saggio (Archetipo Animale)': 'The Wise Old Guide (Animal Archetype)',
+    'Il Vecchio Saggio': 'The Wise Old Guide',
+    "L'Ombra della Razionalità": 'The Shadow of Rationality',
+    'Il Trickster': 'The Trickster',
+    'Il Briccone Divino': 'The Trickster',
+    'Il Guardiano della Soglia': 'The Threshold Guardian',
+    'La Grande Madre': 'The Great Mother',
+    "L'Eroe": 'The Hero',
+    'Il Fanciullo': 'The Child',
+    'Il Fanciullo / Puer Aeternus': 'The Child / Puer Aeternus',
+    'La Rinascita': 'The Rebirth',
+    "L'Unione Alchemica": 'The Alchemical Union',
+  };
+
+  const enToIt: Record<string, string> = {
+    'The Self': 'Il Sé',
+    'The Shadow': "L'Ombra",
+    'The Anima/Animus': "L'Anima / L'Animus",
+    'The Anima': "L'Anima",
+    'The Animus': "L'Animus",
+    'The Persona': 'La Persona',
+    'The Wise Guide / Psychopomp': 'La Guida Saggia / Psicopompo',
+    'The Wise Guide': 'La Guida Saggia',
+    'The Wise Old Guide (Animal Archetype)': 'Il Vecchio Saggio (Archetipo Animale)',
+    'The Wise Old Guide': 'Il Vecchio Saggio',
+    'The Wise Old Man': 'Il Vecchio Saggio',
+    'The Shadow of Rationality': "L'Ombra della Razionalità",
+    'The Trickster': 'Il Trickster',
+    'The Threshold Guardian': 'Il Guardiano della Soglia',
+    'The Great Mother': 'La Grande Madre',
+    'The Hero': "L'Eroe",
+    'The Child': 'Il Fanciullo',
+    'The Child / Puer Aeternus': 'Il Fanciullo (Puer Aeternus)',
+    'The Rebirth': 'La Rinascita',
+    'The Alchemical Union': "L'Unione Alchemica",
+  };
+
+  if (lang === 'it') {
+    return enToIt[name] || name;
+  } else {
+    return itToEn[name] || name;
+  }
+}
+
+export function localizeSymbolName(name: string, lang: Language): string {
+  if (!name) return name;
+  const itToEn: Record<string, string> = {
+    'Cattedrale Sommersa che Emerge': 'Rising Submerged Cathedral',
+    'Cattedrale Sommersa': 'Submerged Cathedral',
+    "Specchi d'Argento con Vite Alternative": 'Silver Mirrors with Alternate Lives',
+    "Figura in Tunica Indaco con Lanterna d'Ottone": 'Indigo Robed Figure with Brass Lantern',
+    'Maree Oceaniche al Contrario e Respiro Subacqueo': 'Reverse Ocean Currents & Underwater Breathing',
+    'Respiro Subacqueo': 'Breathing Underwater',
+    'Alberi Meccanici a Ingranaggi di Rame': 'Clockwork Trees with Copper Gears',
+    "Gufo Meccanico d'Ottone con Occhi d'Ambra": 'Brass Owl with Amber Lens Eyes',
+    'Il Grande Gufo Meccanico': 'The Great Clockwork Owl',
+    'La Chiave d\'Oro': 'The Golden Key',
+    'Chiave Dorata Caduta nel Muschio': 'Golden Key Dropped into the Moss',
+    "Orologi da Taschino Ticchettanti tra i Rami": 'Pocket Watches Ticking in the Canopy',
+    "Orologi d'Epoca Fluttuanti tra i Rami": 'Antique Floating Clocks',
+  };
+
+  const enToIt: Record<string, string> = {
+    'Rising Submerged Cathedral': 'Cattedrale Sommersa che Emerge',
+    'Submerged Cathedral Rising': 'Cattedrale Sommersa che Emerge',
+    'Submerged Cathedral': 'Cattedrale Sommersa',
+    'Silver Mirrors with Alternate Lives': "Specchi d'Argento con Vite Alternative",
+    'Silver Mirrors Reflecting Alternate Lives': "Specchi d'Argento con Vite Alternative",
+    'Indigo Robed Figure with Brass Lantern': "Figura in Tunica Indaco con Lanterna d'Ottone",
+    'Indigo Veiled Figure with Brass Lantern': "Figura in Tunica Indaco con Lanterna d'Ottone",
+    'Reverse Ocean Currents & Underwater Breathing': 'Maree Oceaniche al Contrario e Respiro Subacqueo',
+    'Breathing Underwater': 'Respiro Subacqueo',
+    'Clockwork Trees with Copper Gears': 'Alberi Meccanici a Ingranaggi di Rame',
+    'The Great Clockwork Owl': 'Il Grande Gufo Meccanico',
+    'Brass Owl with Amber Lens Eyes': "Gufo Meccanico d'Ottone con Occhi d'Ambra",
+    'The Golden Key': "La Chiave d'Oro",
+    'Golden Key Dropped into the Moss': 'Chiave Dorata Caduta nel Muschio',
+    'Pocket Watches Ticking in the Canopy': "Orologi da Taschino Ticchettanti tra i Rami",
+    'Antique Floating Clocks': "Orologi d'Epoca Fluttuanti tra i Rami",
+  };
+
+  if (lang === 'it') {
+    return enToIt[name] || name;
+  } else {
+    return itToEn[name] || name;
+  }
+}
+
+export function localizeEmotionName(name: string, lang: Language): string {
+  if (!name) return name;
+  const itToEn: Record<string, string> = {
+    'Meraviglia Reverente & Anelito Esistenziale': 'Reverent Awe & Existential Yearning',
+    'Tensione tra Intelletto e Anima': 'Intrigue & Release of Control',
+    'Meraviglia Reverente': 'Reverent Wonder',
+    'Meraviglia': 'Wonder',
+    'Stupore': 'Awe',
+    'Curiosità': 'Curiosity',
+    'Curiosità e Mistero': 'Curiosity & Mystery',
+    'Ansia': 'Anxiety',
+    'Paura': 'Fear',
+    'Pace': 'Peace',
+    'Pace e Serenità': 'Peace & Serenity',
+    'Gioia': 'Joy',
+    'Malinconia': 'Melancholy',
+    'Riflessivo': 'Reflective',
+    'Intrigo & Abbandono del Controllo': 'Intrigue & Release of Control',
+  };
+
+  const enToIt: Record<string, string> = {
+    'Reverent Awe & Existential Yearning': 'Meraviglia Reverente & Anelito Esistenziale',
+    'Reverent Wonder & Existential Longing': 'Meraviglia Reverente & Anelito Esistenziale',
+    'Intrigue & Release of Control': 'Tensione tra Intelletto e Anima',
+    'Tension Between Intellect & Soul': 'Tensione tra Intelletto e Anima',
+    'Reverent Wonder': 'Meraviglia Reverente',
+    'Wonder': 'Meraviglia',
+    'Awe': 'Stupore',
+    'Curiosity': 'Curiosità',
+    'Curiosity & Mystery': 'Curiosità e Mistero',
+    'Anxiety': 'Ansia',
+    'Fear': 'Paura',
+    'Peace': 'Pace',
+    'Peace & Serenity': 'Pace e Serenità',
+    'Joy': 'Gioia',
+    'Melancholy': 'Malinconia',
+    'Reflective': 'Riflessivo',
+  };
+
+  if (lang === 'it') {
+    return enToIt[name] || name;
+  } else {
+    return itToEn[name] || name;
+  }
+}
+

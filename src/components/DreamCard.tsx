@@ -13,6 +13,7 @@ import { DreamEntry } from '../types';
 import { exportDreamAsMarkdown } from '../utils/storage';
 import { useLanguage } from '../context/LanguageContext';
 import { getSafeDreamArtwork } from '../utils/dreamArtwork';
+import { localizeArchetypeName, localizeSymbolName, localizeEmotionName } from '../utils/translations';
 
 interface DreamCardProps {
   dream: DreamEntry;
@@ -29,7 +30,9 @@ export const DreamCard: React.FC<DreamCardProps> = ({
 }) => {
   const { t, language } = useLanguage();
   const archetypes = dream.interpretation?.archetypes || [];
-  const dominantEmotion = dream.interpretation?.dominantEmotion || (language === 'it' ? 'Misterioso' : 'Mysterious');
+  const dominantEmotion = dream.interpretation?.dominantEmotion 
+    ? localizeEmotionName(dream.interpretation.dominantEmotion, language) 
+    : (language === 'it' ? 'Misterioso' : 'Mysterious');
   const symbols = dream.interpretation?.symbols || [];
   const [imageSrc, setImageSrc] = useState<string>(() => getSafeDreamArtwork(dream));
 
@@ -142,7 +145,7 @@ export const DreamCard: React.FC<DreamCardProps> = ({
                   key={i}
                   className="text-[10px] font-medium px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300"
                 >
-                  {a.archetype}
+                  {localizeArchetypeName(a.archetype, language)}
                 </span>
               ))}
               {archetypes.length > 2 && (
@@ -158,7 +161,7 @@ export const DreamCard: React.FC<DreamCardProps> = ({
                   key={idx}
                   className="text-[10px] text-slate-400 bg-slate-800/60 px-1.5 py-0.5 rounded border border-slate-700/50"
                 >
-                  #{s.name}
+                  #{localizeSymbolName(s.name, language)}
                 </span>
               ))}
             </div>

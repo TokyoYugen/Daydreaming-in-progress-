@@ -2,6 +2,7 @@ import React from 'react';
 import { Brain, Compass, Sparkles, Eye, TrendingUp, Moon } from 'lucide-react';
 import { DreamEntry } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { localizeArchetypeName, localizeSymbolName, localizeEmotionName } from '../utils/translations';
 
 interface DreamStatsProps {
   dreams: DreamEntry[];
@@ -21,19 +22,21 @@ export const DreamStats: React.FC<DreamStatsProps> = ({ dreams, onSelectDream })
 
     if (dream.interpretation?.archetypes) {
       dream.interpretation.archetypes.forEach((a) => {
-        archetypeCounts[a.archetype] = (archetypeCounts[a.archetype] || 0) + 1;
+        const localizedName = localizeArchetypeName(a.archetype, language);
+        archetypeCounts[localizedName] = (archetypeCounts[localizedName] || 0) + 1;
       });
     }
 
     if (dream.interpretation?.symbols) {
       dream.interpretation.symbols.forEach((s) => {
-        symbolCounts[s.name] = (symbolCounts[s.name] || 0) + 1;
+        const localizedSymbol = localizeSymbolName(s.name, language);
+        symbolCounts[localizedSymbol] = (symbolCounts[localizedSymbol] || 0) + 1;
       });
     }
 
     if (dream.interpretation?.dominantEmotion) {
-      const em = dream.interpretation.dominantEmotion;
-      emotionCounts[em] = (emotionCounts[em] || 0) + 1;
+      const localizedEmotion = localizeEmotionName(dream.interpretation.dominantEmotion, language);
+      emotionCounts[localizedEmotion] = (emotionCounts[localizedEmotion] || 0) + 1;
     }
   });
 
@@ -171,9 +174,10 @@ export const DreamStats: React.FC<DreamStatsProps> = ({ dreams, onSelectDream })
               {sortedEmotions.map(([em, count]) => (
                 <span
                   key={em}
-                  className="text-[11px] px-2 py-0.5 rounded-md bg-amber-950/30 border border-amber-500/30 text-amber-300"
+                  className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-amber-950/30 border border-amber-500/30 text-amber-300 font-medium whitespace-nowrap"
                 >
-                  {em} ({count})
+                  <span>{em}</span>
+                  <span className="text-[10px] text-amber-400/80 font-mono">({count})</span>
                 </span>
               ))}
             </div>
