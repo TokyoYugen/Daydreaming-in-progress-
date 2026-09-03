@@ -95,6 +95,17 @@ function formatErrorMessage(error: any): string {
   return String(error);
 }
 
+// XML escape helper for SVG text
+function escapeXml(str: string): string {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 // Robust Gemini caller with exponential backoff and instant fallback model support
 async function generateContentWithRetryAndFallback(
   ai: GoogleGenAI,
@@ -102,8 +113,8 @@ async function generateContentWithRetryAndFallback(
     contents: any;
     config?: any;
   },
-  primaryModel: string = "gemini-3.7-flash",
-  fallbackModels: string[] = ["gemini-flash-latest", "gemini-3.1-flash-lite"]
+  primaryModel: string = "gemini-3.8-flash",
+  fallbackModels: string[] = ["gemini-3.1-flash-lite", "gemini-flash-latest"]
 ) {
   const models = [primaryModel, ...fallbackModels.filter((m) => m !== primaryModel)];
   let lastError: any = null;
@@ -169,35 +180,9 @@ async function generateArtworkWithGemini(
   aspectRatio: "4:3" | "1:1" | "16:9" = "4:3",
   dreamTitle: string = "Oneiric Vision"
 ): Promise<string | null> {
-  // First try official Imagen 3 models
-  const imagenModels = ["imagen-3.0-generate-002", "imagen-3.0-fast-generate-001"];
-  for (const model of imagenModels) {
-    try {
-      const imageResult = await ai.models.generateImages({
-        model,
-        prompt,
-        config: {
-          numberOfImages: 1,
-          aspectRatio: aspectRatio === "4:3" ? "4:3" : "1:1",
-          outputMimeType: "image/jpeg",
-        },
-      });
-
-      const imageBytes = imageResult.generatedImages?.[0]?.image?.imageBytes;
-      if (imageBytes) {
-        return `data:image/jpeg;base64,${imageBytes}`;
-      }
-    } catch (err: any) {
-      const errStr = formatErrorMessage(err);
-      if (!errStr.includes("quota") && !errStr.includes("RESOURCE_EXHAUSTED")) {
-        console.info(`[Imagen Model] ${model} info: ${errStr.slice(0, 80)}`);
-      }
-    }
-  }
-
-  // Next try multimodal image generation models
+  // First attempt Gemini multimodal image generation models
   const imageModels = [
-    "gemini-2.5-flash-image",
+    "gemini-3.1-flash-lite-image",
     "gemini-3.1-flash-image",
   ];
 
@@ -227,8 +212,69 @@ async function generateArtworkWithGemini(
         }
       }
     } catch (err: any) {
-      // Quietly fall through on quota or service limitation
+      const errStr = formatErrorMessage(err);
+      if (errStr.includes("RESOURCE_EXHAUSTED") || errStr.includes("limit: 0") || errStr.includes("quota")) {
+        // Free-tier API keys have limit: 0 for image models in AI Studio; fall back smoothly
+        console.info(`[Image Generation Note] AI image generation via ${model} requires paid billing in AI Studio. Generating procedural fine art canvas...`);
+        break;
+      }
     }
+  }
+
+  // Preset match for specific fine-art illustrations if matching core themes
+  const lowerPrompt = prompt.toLowerCase();
+  if ((lowerPrompt.includes("cathedral") || lowerPrompt.includes("cattedrale") || lowerPrompt.includes("sommersa")) && lowerPrompt.includes("specch")) {
+    return "/artwork/cathedral_of_mirrors.jpg";
+  }
+  if ((lowerPrompt.includes("owl") || lowerPrompt.includes("gufo") || lowerPrompt.includes("orologi") || lowerPrompt.includes("clockwork")) && (lowerPrompt.includes("foresta") || lowerPrompt.includes("forest") || lowerPrompt.includes("chiave") || lowerPrompt.includes("key"))) {
+    return "/artwork/clockwork_forest_owl.jpg";
+  }
+
+  // Attempt Gemini SVG generative digital art matching the exact dream story
+  try {
+    const svgPrompt = `You are a world-class surrealist vector artist. Generate a rich, evocative, standalone SVG artwork (viewBox="0 0 800 600" width="800" height="600") that visually depicts this specific dream:
+Dream title: "${dreamTitle}"
+Dream description & style: "${prompt}"
+
+STRICT GUIDELINES:
+1. Return ONLY the raw valid <svg ...>...</svg> XML element. No explanations, no markdown ticks, no comments.
+2. Must be 100% valid XML. Replace all raw '&' with '&amp;', '<' with '&lt;', '>' with '&gt;'.
+3. Visually illustrate the key objects, scenery, landscape, atmosphere, and characters explicitly described in the dream.
+4. Include rich gradients (<linearGradient>, <radialGradient>), surreal glowing filters (<feGaussianBlur>), layered shapes, silhouette landscapes, and cosmic/metaphysical lighting.
+5. Do NOT output a simple blank abstract box. Output a rich, multi-layered surrealist fine art illustration.`;
+
+    const svgResult = await generateContentWithRetryAndFallback(
+      ai,
+      {
+        contents: svgPrompt,
+        config: {
+          temperature: 0.7,
+        },
+      },
+      "gemini-3.1-flash-lite",
+      ["gemini-flash-latest", "gemini-3.8-flash"]
+    );
+
+    const rawSvg = (svgResult.text || "").trim()
+      .replace(/^```xml/i, "")
+      .replace(/^```svg/i, "")
+      .replace(/^```/i, "")
+      .replace(/```$/i, "")
+      .trim();
+
+    if (rawSvg.startsWith("<svg") && rawSvg.endsWith("</svg>") && rawSvg.length > 500) {
+      // Validate that XML doesn't contain invalid unescaped entities
+      const stripped = rawSvg.replace(/<!--[\s\S]*?-->/g, "");
+      const hasInvalidAmp = /&(?!(amp|lt|gt|quot|apos|#\d+|#x[a-f0-9]+);)/i.test(stripped);
+      const sanitizedSvg = hasInvalidAmp
+        ? rawSvg.replace(/&(?!(amp|lt|gt|quot|apos|#\d+|#x[a-f0-9]+);)/g, "&amp;")
+        : rawSvg;
+
+      const base64Svg = Buffer.from(sanitizedSvg, "utf-8").toString("base64");
+      return `data:image/svg+xml;base64,${base64Svg}`;
+    }
+  } catch (svgAiErr) {
+    console.info("[Generative SVG Note] Falling back to procedural surrealist canvas:", formatErrorMessage(svgAiErr).slice(0, 80));
   }
 
   // High-fidelity Procedural Surrealist Canvas Generator (Guarantees zero-loss & stunning fine-art visuals)
@@ -238,7 +284,7 @@ async function generateArtworkWithGemini(
       { bg1: "#07131e", bg2: "#16283d", accent: "#34d399", glow: "#2dd4bf", light: "#fef08a", motif: "ocean" },
       { bg1: "#1c0b24", bg2: "#2d124d", accent: "#f472b6", glow: "#c084fc", light: "#fb923c", motif: "cosmic" },
       { bg1: "#18181b", bg2: "#27272a", accent: "#e2e8f0", glow: "#a855f7", light: "#60a5fa", motif: "shadow" },
-      { bg1: "#0d1b2a", bg2: "#1b263b", accent: "#e0a96d", glow: "#778da9", light: "#f0ebd8", motif: "time" }
+      { bg1: "#0d1b2a", bg2: "#1b263b", accent: "#e0a96d", glow: "#778da9", light: "#f0ebd8", motif: "time" },
     ];
     // Pick palette deterministically from prompt
     let hash = 0;
@@ -246,8 +292,35 @@ async function generateArtworkWithGemini(
     const pIndex = Math.abs(hash) % paletteSets.length;
     const pal = paletteSets[pIndex];
 
-    const safeTitle = dreamTitle.replace(/["<>]/g, "").slice(0, 42);
-    const safeStyle = (prompt.includes("Magritte") ? "Magritte & Dalí Oneiric Style" : "Surrealist Vision").replace(/["<>]/g, "");
+    const safeTitle = escapeXml((dreamTitle || "Visione Onirica").slice(0, 42));
+    const rawStyle = prompt.includes("Magritte") ? "Magritte e Dalí Oneiric Style" : "Surrealist Vision";
+    const safeStyle = escapeXml(rawStyle);
+
+    // Dynamic motif elements based on dream keywords
+    let dynamicMotif = "";
+    if (lowerPrompt.includes("forest") || lowerPrompt.includes("alber") || lowerPrompt.includes("tree") || lowerPrompt.includes("ingranagg") || lowerPrompt.includes("gear")) {
+      dynamicMotif = `
+        <!-- Clockwork Trees & Gears Motif -->
+        <circle cx="400" cy="240" r="70" fill="none" stroke="${pal.accent}" stroke-width="2.5" stroke-dasharray="12 6" filter="url(#surrealGlow)" />
+        <circle cx="400" cy="240" r="44" fill="none" stroke="${pal.light}" stroke-width="1.5" stroke-dasharray="6 4" />
+        <circle cx="400" cy="240" r="16" fill="${pal.accent}" fill-opacity="0.6" />
+        <path d="M 396 230 L 404 230 L 404 340 L 416 340 L 416 352 L 404 352 L 404 362 L 414 362 L 414 372 L 396 372 Z" fill="${pal.light}" stroke="${pal.accent}" stroke-width="1" filter="url(#surrealGlow)" />
+      `;
+    } else if (lowerPrompt.includes("mare") || lowerPrompt.includes("sea") || lowerPrompt.includes("ocean") || lowerPrompt.includes("water") || lowerPrompt.includes("cattedral") || lowerPrompt.includes("specch")) {
+      dynamicMotif = `
+        <!-- Submerged Gothic Spire & Silver Mirrors -->
+        <polygon points="400,100 445,380 400,420 355,380" fill="url(#horizonGrad)" stroke="${pal.accent}" stroke-width="2" filter="url(#surrealGlow)" />
+        <ellipse cx="260" cy="240" rx="30" ry="50" fill="${pal.bg2}" stroke="${pal.light}" stroke-width="1.5" fill-opacity="0.75" transform="rotate(-12 260 240)" />
+        <ellipse cx="540" cy="240" rx="30" ry="50" fill="${pal.bg2}" stroke="${pal.light}" stroke-width="1.5" fill-opacity="0.75" transform="rotate(12 540 240)" />
+      `;
+    } else {
+      dynamicMotif = `
+        <!-- Metaphysical Monolith Portal -->
+        <polygon points="400,140 440,380 400,410 360,380" fill="url(#horizonGrad)" stroke="${pal.accent}" stroke-width="1.5" filter="url(#surrealGlow)" />
+        <circle cx="400" cy="240" r="28" fill="${pal.light}" fill-opacity="0.8" />
+        <circle cx="400" cy="240" r="12" fill="${pal.bg1}" />
+      `;
+    }
 
     const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
       <defs>
@@ -277,15 +350,15 @@ async function generateArtworkWithGemini(
       <path d="M 0 380 Q 200 340 400 390 T 800 360 L 800 600 L 0 600 Z" fill="${pal.bg2}" fill-opacity="0.75" />
       <path d="M 0 430 Q 300 390 550 450 T 800 420 L 800 600 L 0 600 Z" fill="${pal.bg1}" />
 
-      <!-- Infinite Portal Lines -->
+      <!-- Infinite Perspective Lines -->
       <line x1="400" y1="220" x2="100" y2="600" stroke="${pal.glow}" stroke-width="1.5" stroke-opacity="0.4" stroke-dasharray="4 4" />
       <line x1="400" y1="220" x2="700" y2="600" stroke="${pal.glow}" stroke-width="1.5" stroke-opacity="0.4" stroke-dasharray="4 4" />
       <line x1="400" y1="220" x2="400" y2="600" stroke="${pal.accent}" stroke-width="1" stroke-opacity="0.5" />
 
-      <!-- Surreal Floating Obelisk / Mirror Portal -->
-      <polygon points="400,160 440,380 400,410 360,380" fill="url(#horizonGrad)" stroke="${pal.accent}" stroke-width="1.5" filter="url(#surrealGlow)" />
+      <!-- Dynamic Motif Specific to the Dream -->
+      ${dynamicMotif}
 
-      <!-- Subtle Fine Art Vignette & Frame -->
+      <!-- Subtle Fine Art Vignette and Frame -->
       <rect x="24" y="24" width="752" height="552" fill="none" stroke="${pal.accent}" stroke-opacity="0.25" stroke-width="1" />
       <rect x="28" y="28" width="744" height="544" fill="none" stroke="${pal.light}" stroke-opacity="0.15" stroke-width="0.5" />
 
@@ -737,44 +810,49 @@ ${
   }
 });
 
-// Explicit 404 for unhandled API routes so they do not return HTML
-app.all("/api/*", (req, res) => {
-  res.status(404).json({
-    error: `Endpoint not found: ${req.method} ${req.originalUrl}`,
-  });
-});
-
-// Global error handler returning JSON
-app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (res.headersSent) {
-    return next(err);
-  }
-  const cleanError = formatErrorMessage(err);
-  console.error("[Server Error]", cleanError);
-  res.status(err.status || 500).json({
-    error: cleanError || "Internal server error occurred",
-  });
-});
-
 // Vite middleware for development & static files in production
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
+  try {
+    // Explicit 404 for unhandled API routes so they do not return HTML
+    app.all("/api/*", (req, res) => {
+      res.status(404).json({
+        error: `Endpoint not found: ${req.method} ${req.originalUrl}`,
+      });
     });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-  }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Dream Journal server running on http://0.0.0.0:${PORT}`);
-  });
+    if (process.env.NODE_ENV !== "production") {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } else {
+      const distPath = path.join(process.cwd(), "dist");
+      app.use(express.static(distPath));
+      app.get("*", (_req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+      });
+    }
+
+    // Global error handler returning JSON
+    app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+      if (res.headersSent) {
+        return next(err);
+      }
+      const cleanError = formatErrorMessage(err);
+      console.error("[Server Error]", cleanError);
+      res.status(err.status || 500).json({
+        error: cleanError || "Internal server error occurred",
+      });
+    });
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Dream Journal server running on http://0.0.0.0:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
 }
 
 startServer();

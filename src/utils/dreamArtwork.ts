@@ -65,18 +65,63 @@ export const SURREALIST_PALETTES: SurrealistPalette[] = [
 ];
 
 // Helper to convert UTF-8 string to Base64 in any JS environment (browser or node)
+// Simple, reliable XML entity escaping for SVG text and attributes
+export function escapeXml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+// Convert string to base64 reliably across browser and node environments
 export function utf8ToBase64(str: string): string {
   try {
-    if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
-      return window.btoa(unescape(encodeURIComponent(str)));
-    }
     if (typeof Buffer !== 'undefined') {
       return Buffer.from(str, 'utf-8').toString('base64');
+    }
+    if (typeof window !== 'undefined') {
+      const bytes = new TextEncoder().encode(str);
+      let binString = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binString += String.fromCharCode(bytes[i]);
+      }
+      return window.btoa(binString);
     }
   } catch (e) {
     console.error('Base64 encoding failed:', e);
   }
   return '';
+}
+
+// Check if a base64 string is a valid SVG without unescaped XML entity bugs
+export function isValidSvgBase64(base64: string): boolean {
+  try {
+    const raw = typeof window !== 'undefined'
+      ? (() => {
+          const bin = window.atob(base64);
+          const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+          return new TextDecoder().decode(bytes);
+        })()
+      : Buffer.from(base64, 'base64').toString('utf-8');
+
+    if (!raw.includes('<svg') || !raw.includes('</svg>')) {
+      return false;
+    }
+
+    if (typeof window !== 'undefined' && typeof window.DOMParser !== 'undefined') {
+      const doc = new window.DOMParser().parseFromString(raw, 'image/svg+xml');
+      return !doc.querySelector('parsererror');
+    }
+
+    // Strip comments before checking for stray ampersands in fallback environments
+    const stripped = raw.replace(/<!--[\s\S]*?-->/g, '');
+    return !/&(?!(amp|lt|gt|quot|apos|#\d+|#x[a-f0-9]+);)/i.test(stripped);
+  } catch {
+    return false;
+  }
 }
 
 // Generates high-resolution Surrealist Artwork as a Base64 SVG Data-URI
@@ -94,9 +139,9 @@ export function generateDreamSvgArtwork(
   const palette = SURREALIST_PALETTES[positiveHash % SURREALIST_PALETTES.length];
   const motifType = positiveHash % 3; // 0 = Portal & Mirrors, 1 = Clockwork & Astronomy, 2 = Sacred Monolith
 
-  const safeTitle = (title || 'Visione Onirica').replace(/["<>]/g, '').slice(0, 42);
-  const safeStyle = (styleName || 'Surrealist Fine Art').replace(/["<>]/g, '').slice(0, 36);
-  const safeEmotion = (emotion || palette.atmosphere).replace(/["<>]/g, '').slice(0, 32);
+  const safeTitle = escapeXml((title || 'Visione Onirica').slice(0, 42));
+  const safeStyle = escapeXml((styleName || 'Surrealist Fine Art').slice(0, 36));
+  const safeEmotion = escapeXml((emotion || palette.atmosphere).toUpperCase().slice(0, 32));
 
   // Dynamic SVG based on motif
   let centerMotif = '';
@@ -184,7 +229,7 @@ export function generateDreamSvgArtwork(
     <!-- Museum Typography Placard -->
     <rect x="120" y="495" width="560" height="70" rx="10" fill="#030712" fill-opacity="0.88" stroke="${palette.accent}" stroke-opacity="0.35" />
     <text x="400" y="527" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-size="18" font-weight="700" fill="${palette.accent}" letter-spacing="2.5">${safeTitle}</text>
-    <text x="400" y="549" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="500" fill="${palette.light}" letter-spacing="1.5" opacity="0.85">${safeEmotion.toUpperCase()} • ${safeStyle}</text>
+    <text x="400" y="549" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="500" fill="${palette.light}" letter-spacing="1.5" opacity="0.85">${safeEmotion} • ${safeStyle}</text>
   </svg>`;
 
   const base64 = utf8ToBase64(svg);
@@ -192,23 +237,26 @@ export function generateDreamSvgArtwork(
 }
 
 // Preset Artwork for Sample 1: The Submerged Cathedral of Mirrors
-export const SUBMERGED_CATHEDRAL_ARTWORK = generateDreamSvgArtwork(
-  'La Cattedrale Sommersa di Specchi',
-  'Surrealismo (Salvador Dalí & René Magritte)',
-  'Santuario Sommerso & Specchi d\'Argento'
-);
+export const SUBMERGED_CATHEDRAL_ARTWORK = '/artwork/cathedral_of_mirrors.jpg';
 
 // Preset Artwork for Sample 2: The Clockwork Forest of Brass Owls
-export const CLOCKWORK_FOREST_ARTWORK = generateDreamSvgArtwork(
-  'Il Bosco a Orologeria dei Gufi d\'Ottone',
-  'Surrealismo Alchemico (Remedios Varo)',
-  'Gufi d\'Ottone & Chiave Dorata'
-);
+export const CLOCKWORK_FOREST_ARTWORK = '/artwork/clockwork_forest_owl.jpg';
 
 // Helper to get safe artwork URL
 export function getSafeDreamArtwork(dream: DreamEntry): string {
+  // If it's sample dream 1 or 2, always guarantee the authentic surrealist paintings
+  if (dream.id === 'sample-dream-1') {
+    return SUBMERGED_CATHEDRAL_ARTWORK;
+  }
+  if (dream.id === 'sample-dream-2') {
+    return CLOCKWORK_FOREST_ARTWORK;
+  }
+
   if (dream.imageUrl && typeof dream.imageUrl === 'string' && dream.imageUrl.trim() !== '') {
     const url = dream.imageUrl.trim();
+    if (url.startsWith('/artwork/')) {
+      return url;
+    }
     // If it's the broken data:image/svg+xml;utf8, format, repair it immediately
     if (url.startsWith('data:image/svg+xml;utf8,')) {
       try {
@@ -217,18 +265,20 @@ export function getSafeDreamArtwork(dream: DreamEntry): string {
       } catch {
         // regenerate below
       }
+    } else if (url.startsWith('data:image/svg+xml;base64,')) {
+      const b64 = url.replace('data:image/svg+xml;base64,', '');
+      if (isValidSvgBase64(b64)) {
+        return url;
+      }
+      // If SVG XML was invalid (e.g. unescaped & from previous version), regenerate cleanly below
     } else if (url.startsWith('data:image/') && !url.includes('undefined')) {
-      // Valid data uri (jpeg, png, or base64 svg)
+      // Valid data uri (jpeg, png)
       return url;
     } else if (url.startsWith('http') && !url.includes('unsplash.com')) {
       // Valid remote image url
       return url;
     }
   }
-
-  // If it's sample dream 1 or 2
-  if (dream.id === 'sample-dream-1') return SUBMERGED_CATHEDRAL_ARTWORK;
-  if (dream.id === 'sample-dream-2') return CLOCKWORK_FOREST_ARTWORK;
 
   // Otherwise generate custom SVG for this dream
   const style = dream.interpretation?.artStyle || 'Surrealist Masterpiece';

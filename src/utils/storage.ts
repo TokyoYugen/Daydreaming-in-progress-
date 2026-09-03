@@ -9,7 +9,7 @@ const STORAGE_KEY = 'nocturne_dream_journal_entries';
 function sanitizeDreams(dreams: DreamEntry[]): DreamEntry[] {
   return dreams.map((d) => {
     const safeUrl = getSafeDreamArtwork(d);
-    if (d.imageUrl !== safeUrl && (!d.imageUrl || d.imageUrl.includes('unsplash.com') || d.imageUrl.startsWith('data:image/svg+xml;utf8,'))) {
+    if (d.imageUrl !== safeUrl) {
       return { ...d, imageUrl: safeUrl };
     }
     return d;
@@ -32,6 +32,7 @@ export function loadSavedDreams(): DreamEntry[] {
     }
     // Ensure all sample dreams are present or merged and sanitized
     const sanitized = sanitizeDreams(parsed);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
     return sanitized;
   } catch (err) {
     console.error('Failed to load dreams from localStorage:', err);

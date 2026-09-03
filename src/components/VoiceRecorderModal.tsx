@@ -183,7 +183,7 @@ export const VoiceRecorderModal: React.FC<VoiceRecorderModalProps> = ({
       title: titleToUse,
       transcription: textToSave,
       audioDuration: audioResult?.durationSeconds || recordingSeconds || 30,
-      imageUrl: undefined,
+      imageUrl: generateDreamSvgArtwork(titleToUse, selectedArtStyle, isIt ? 'Profonda Risonanza' : 'Deep Resonance'),
       interpretation: {
         title: titleToUse,
         summary: textToSave.slice(0, 160) + (textToSave.length > 160 ? '...' : ''),
