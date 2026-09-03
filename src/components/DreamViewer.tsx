@@ -80,6 +80,7 @@ export const DreamViewer: React.FC<DreamViewerProps> = ({
       setArtErrorMessage(null);
       const promptToUse = customArtPrompt || dream.imagePrompt || dream.title;
 
+      console.log(`[DreamViewer ART] Initiating art regeneration for "${dream.title}" with style: "${customArtStyle}" and prompt: "${promptToUse.slice(0, 100)}..."`);
       const data = await fetchJson<{
         imageUrl?: string;
         prompt?: string;
@@ -89,8 +90,12 @@ export const DreamViewer: React.FC<DreamViewerProps> = ({
         body: JSON.stringify({
           prompt: promptToUse,
           style: customArtStyle,
+          dreamTitle: dream.title,
+          emotion: dream.interpretation?.dominantEmotion,
         }),
       });
+
+      console.log(`[DreamViewer ART SUCCESS] Server returned artwork response. ImageUrl length: ${data.imageUrl?.length || 0} chars | Prefix: "${data.imageUrl?.slice(0, 45)}..."`);
 
       if (data.imageUrl) {
         setImageSrc(data.imageUrl);
@@ -101,6 +106,7 @@ export const DreamViewer: React.FC<DreamViewerProps> = ({
         });
         setShowArtPromptModal(false);
       } else {
+        console.warn(`[DreamViewer ART WARN] No imageUrl in server response, generating client procedural SVG.`);
         const proceduralArt = generateDreamSvgArtwork(
           dream.title,
           customArtStyle,
@@ -115,7 +121,7 @@ export const DreamViewer: React.FC<DreamViewerProps> = ({
         setShowArtPromptModal(false);
       }
     } catch (err: any) {
-      console.warn('Art regeneration server error, generating custom procedural canvas:', err);
+      console.error('[DreamViewer ART ERROR] Art regeneration server call failed:', err);
       const promptToUse = customArtPrompt || dream.imagePrompt || dream.title;
       const proceduralArt = generateDreamSvgArtwork(
         dream.title,
@@ -204,8 +210,13 @@ export const DreamViewer: React.FC<DreamViewerProps> = ({
                 src={imageSrc}
                 alt={dream.title}
                 referrerPolicy="no-referrer"
+                onLoad={() => {
+                  console.log(`[DreamViewer LOADED] Main artwork successfully rendered for "${dream.title}" (${dream.id}).`);
+                }}
                 onError={() => {
-                  setImageSrc(getSafeDreamArtwork(dream));
+                  console.warn(`[DreamViewer FALLBACK] Main artwork load failed for "${dream.title}" (${dream.id}). Applying fallback SVG canvas.`);
+                  const fallback = getSafeDreamArtwork({ ...dream, imageUrl: undefined });
+                  setImageSrc(fallback);
                 }}
                 className="w-full h-full object-cover cursor-pointer transition-transform duration-700 group-hover:scale-105"
                 onClick={() => setIsImageFullscreen(true)}

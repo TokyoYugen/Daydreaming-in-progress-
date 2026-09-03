@@ -34,10 +34,16 @@ export const DreamCard: React.FC<DreamCardProps> = ({
     ? localizeEmotionName(dream.interpretation.dominantEmotion, language) 
     : (language === 'it' ? 'Misterioso' : 'Mysterious');
   const symbols = dream.interpretation?.symbols || [];
-  const [imageSrc, setImageSrc] = useState<string>(() => getSafeDreamArtwork(dream));
+  const [imageSrc, setImageSrc] = useState<string>(() => {
+    const initial = getSafeDreamArtwork(dream);
+    console.log(`[DreamCard INIT] Artwork initialized for "${dream.title}" (${dream.id}) -> Type: ${initial.startsWith('data:image/svg') ? 'SVG Data URI' : initial.startsWith('data:image/jpeg') ? 'JPEG Base64' : initial.startsWith('data:image/png') ? 'PNG Base64' : 'URL'}, Length: ${initial.length}`);
+    return initial;
+  });
 
   useEffect(() => {
-    setImageSrc(getSafeDreamArtwork(dream));
+    const updated = getSafeDreamArtwork(dream);
+    console.log(`[DreamCard SYNC] Artwork synced for "${dream.title}" (${dream.id}) -> Type: ${updated.startsWith('data:image/svg') ? 'SVG Data URI' : updated.startsWith('data:image/jpeg') ? 'JPEG Base64' : updated.startsWith('data:image/png') ? 'PNG Base64' : 'URL'}, Length: ${updated.length}`);
+    setImageSrc(updated);
   }, [dream.id, dream.imageUrl]);
 
   return (
@@ -52,8 +58,13 @@ export const DreamCard: React.FC<DreamCardProps> = ({
           src={imageSrc}
           alt={dream.title}
           referrerPolicy="no-referrer"
+          onLoad={() => {
+            console.log(`[DreamCard LOADED] Image rendered successfully for "${dream.title}" (${dream.id}).`);
+          }}
           onError={() => {
-            setImageSrc(getSafeDreamArtwork(dream));
+            console.warn(`[DreamCard FALLBACK] Image load failed for "${dream.title}" (${dream.id}). Applying fallback SVG canvas.`);
+            const fallback = getSafeDreamArtwork({ ...dream, imageUrl: undefined });
+            setImageSrc(fallback);
           }}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
